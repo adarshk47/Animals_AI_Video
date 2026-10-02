@@ -1,0 +1,7 @@
+[server]
+# Streamlit's file watcher scans every transformers module and floods the console with
+# harmless "No module named torchvision" errors. We do not need auto-reload.
+fileWatcherType = "none"
+
+[browser]
+gatherUsageStats = false
