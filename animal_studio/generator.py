@@ -7,12 +7,14 @@
   Scenes longer than one segment are made by chaining segments: each next segment
   starts from the last frame of the previous one (image-to-video).
 """
+import gc
 import math
+import os
 from pathlib import Path
 from typing import Callable, Optional, Tuple
 
 from .compose import run
-from .config import DEFAULT_MODEL, FPS, NEGATIVE_PROMPT
+from .config import DEFAULT_MODEL, FPS, LOW_GEN_SIZE, NEGATIVE_PROMPT
 
 Progress = Optional[Callable[[float, str], None]]
 
@@ -52,6 +54,14 @@ class PlaceholderBackend:
 
 
 class LTXBackend:
+    """Low-memory LTX-Video, built for small GPUs (4GB VRAM) and 8-16GB RAM.
+
+    1. The huge T5 text encoder is loaded alone, used once to encode the prompt on
+       the CPU, then deleted. It is never in memory together with the video model.
+    2. The video model is loaded without a text encoder and run with sequential CPU
+       offload (one layer on the GPU at a time): slow, but needs very little VRAM.
+    3. Resolution is small, so the VAE and activations stay tiny.
+    """
     name = "ltx"
 
     def __init__(self, model_id: str = DEFAULT_MODEL, segment_seconds: float = 4.0,
@@ -62,41 +72,79 @@ class LTXBackend:
         self._t2v = None
         self._i2v = None
 
-    def _load(self):
+    @staticmethod
+    def low_vram_size(size: Tuple[int, int]) -> Tuple[int, int]:
+        w, h = size
+        return LOW_GEN_SIZE["vertical" if h > w else "horizontal"]
+
+    def _dtype(self, torch):
+        name = os.environ.get("ANIMAL_DTYPE", "bfloat16")  # set to float16 if you get black/NaN video
+        return getattr(torch, name)
+
+    def _encode_prompt(self, torch, prompt: str):
+        """Load only the text encoder, encode, free it. Returns CPU tensors."""
+        from diffusers import LTXPipeline
+        tp = LTXPipeline.from_pretrained(self.model_id, transformer=None, vae=None,
+                                         torch_dtype=self._dtype(torch))
+        with torch.no_grad():
+            pe, pm, ne, nm = tp.encode_prompt(
+                prompt, negative_prompt=NEGATIVE_PROMPT, do_classifier_free_guidance=True,
+                device="cpu")
+        out = tuple(t.detach().cpu() for t in (pe, pm, ne, nm))
+        del tp
+        gc.collect()
+        return out
+
+    def _load_video_model(self, torch):
         if self._t2v is not None:
             return
-        import torch
         from diffusers import LTXImageToVideoPipeline, LTXPipeline
         if not torch.cuda.is_available():
             raise RuntimeError(cuda_help(torch))
-        self._t2v = LTXPipeline.from_pretrained(self.model_id, torch_dtype=torch.bfloat16)
+        self._t2v = LTXPipeline.from_pretrained(
+            self.model_id, text_encoder=None, tokenizer=None, torch_dtype=self._dtype(torch))
         self._i2v = LTXImageToVideoPipeline.from_pipe(self._t2v)
-        # Keep VRAM low: only the active sub-model lives on the GPU.
-        self._t2v.enable_model_cpu_offload()
+        self._t2v.enable_sequential_cpu_offload()  # lowest VRAM
         self._t2v.vae.enable_tiling()
 
     def generate(self, prompt: str, seconds: float, size: Tuple[int, int],
                  seed: int, out: Path, progress: Progress = None) -> None:
         import torch
         from diffusers.utils import export_to_video
-        self._load()
-        w, h = size
-        n_seg = max(1, math.ceil(seconds / self.segment_seconds))
-        seg_frames = frames_for(min(seconds, self.segment_seconds))
-        all_frames, last = [], None
-        for i in range(n_seg):
+        if not torch.cuda.is_available():
+            raise RuntimeError(cuda_help(torch))
+        try:
             if progress:
-                progress(i / n_seg, f"Generating part {i + 1}/{n_seg}")
-            gen = torch.Generator("cpu").manual_seed(seed + i)
-            kwargs = dict(prompt=prompt, negative_prompt=NEGATIVE_PROMPT, width=w, height=h,
-                          num_frames=seg_frames, num_inference_steps=self.steps, generator=gen)
-            if last is None:
-                frames = self._t2v(**kwargs).frames[0]
-            else:
-                frames = self._i2v(image=last, **kwargs).frames[0]
-            last = frames[-1]
-            all_frames.extend(frames[1:] if all_frames else frames)
-        export_to_video(all_frames, str(out), fps=FPS)
+                progress(0.0, "Reading the prompt (text model, first time is slow)...")
+            pe, pm, ne, nm = self._encode_prompt(torch, prompt)
+            if progress:
+                progress(0.05, "Loading the video model...")
+            self._load_video_model(torch)
+
+            w, h = self.low_vram_size(size)
+            n_seg = max(1, math.ceil(seconds / self.segment_seconds))
+            seg_frames = frames_for(min(seconds, self.segment_seconds))
+            dev = "cuda"
+            embeds = dict(prompt_embeds=pe.to(dev), prompt_attention_mask=pm.to(dev),
+                          negative_prompt_embeds=ne.to(dev), negative_prompt_attention_mask=nm.to(dev))
+            all_frames, last = [], None
+            for i in range(n_seg):
+                if progress:
+                    progress(0.1 + 0.85 * i / n_seg, f"Generating part {i + 1}/{n_seg} (slow on small GPUs)")
+                gen = torch.Generator("cpu").manual_seed(seed + i)
+                kwargs = dict(width=w, height=h, num_frames=seg_frames, frame_rate=FPS,
+                              num_inference_steps=self.steps, generator=gen, **embeds)
+                if last is None:
+                    frames = self._t2v(**kwargs).frames[0]
+                else:
+                    frames = self._i2v(image=last, **kwargs).frames[0]
+                last = frames[-1]
+                all_frames.extend(frames[1:] if all_frames else frames)
+            export_to_video(all_frames, str(out), fps=FPS)
+        except torch.cuda.OutOfMemoryError as e:
+            torch.cuda.empty_cache()
+            raise RuntimeError("GPU ran out of memory. Lower 'Max seconds per generated part' "
+                               "in the sidebar (try 2) and close other programs.") from e
         if progress:
             progress(1.0, "done")
 

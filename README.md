@@ -32,6 +32,9 @@ Two parts in this repo:
 - To add an animal, background or jungle idea, edit the JSON files in `animal_studio/data/`.
 - If a scene's voice is longer than its clip, the last frame is held until the voice ends.
 
+### Small GPU mode (GTX 1650, 4GB)
+The LTX backend is built for small GPUs: it reads your prompt with the big text model first, then removes it from memory before loading the video model, and runs the video model one layer at a time on the GPU. It generates small clips (256x384 or 384x256) and is **slow** (several minutes for a few seconds of video). It needs about 16GB of RAM, and 8GB may still fail. If it crashes the whole app or freezes the PC, the cause is almost certainly RAM: close the browser tabs and other programs, and tell me your RAM size. If the video comes out black or noisy, set the environment variable `ANIMAL_DTYPE=float16` before running `run.bat` (`set ANIMAL_DTYPE=float16`).
+
 ### I only see colour bars, no animals
 That is the Placeholder test clip. In the sidebar, set **Video generator** to **LTX-Video (real animals, local GPU)** and press Generate clip again. The first time it downloads the model, which takes a while.
 

@@ -9,6 +9,8 @@ PROJECTS_DIR = ROOT / "projects"
 OUTPUT_SIZE = {"vertical": (720, 1280), "horizontal": (1280, 720)}
 # Generation size per orientation (small so it fits in <12GB VRAM; multiples of 32).
 GEN_SIZE = {"vertical": (320, 512), "horizontal": (512, 320)}
+# Used by the local LTX backend so it fits a 4GB GPU (multiples of 32).
+LOW_GEN_SIZE = {"vertical": (256, 384), "horizontal": (384, 256)}
 FPS = 24
 SAMPLE_RATE = 44100
 
