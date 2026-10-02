@@ -12,6 +12,10 @@ if exist .venv rmdir /s /q .venv
 
 py -3.12 -m venv .venv 2>nul
 if not exist .venv\Scripts\activate.bat (
+  REM No py launcher: use plain "python" if it is 3.12.
+  python --version 2>&1 | findstr /C:"3.12" >nul && python -m venv .venv
+)
+if not exist .venv\Scripts\activate.bat (
   echo.
   echo Python 3.12 was not found.
   echo 1. Download "Windows installer (64-bit)" for Python 3.12 from https://www.python.org/downloads/windows/
