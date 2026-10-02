@@ -1,0 +1,10 @@
+# Install PyTorch with CUDA first (see README), then:
+streamlit>=1.40
+diffusers>=0.32
+transformers>=4.46
+accelerate>=1.0
+sentencepiece
+protobuf
+imageio
+imageio-ffmpeg
+numpy

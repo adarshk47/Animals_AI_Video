@@ -1,0 +1,12 @@
+{
+  "lion":       {"label": "Lion (Sher)",        "look": "an adult male African lion with a thick golden-brown mane and amber eyes", "pitch": -5, "speed": 0.9},
+  "monkey":     {"label": "Monkey (Bandar)",    "look": "a rhesus macaque monkey with light brown fur and a pink-red face",          "pitch": 5,  "speed": 1.1},
+  "dog":        {"label": "Dog (Moti)",         "look": "a golden retriever dog with a soft golden coat and a red collar",            "pitch": 0,  "speed": 1.0},
+  "chimpanzee": {"label": "Chimpanzee (Chimpu)","look": "an adult chimpanzee with dark brown-black fur and an expressive wrinkled face", "pitch": 2,  "speed": 1.0},
+  "pigeon":     {"label": "Pigeon (Pintu)",     "look": "a grey pigeon with iridescent green-purple neck feathers",                   "pitch": 6,  "speed": 1.15},
+  "elephant":   {"label": "Elephant (Hathi)",   "look": "a large Indian elephant with big ears and long tusks",                       "pitch": -7, "speed": 0.85},
+  "tiger":      {"label": "Tiger (Sherkhan)",   "look": "a Bengal tiger with orange fur and black stripes",                           "pitch": -4, "speed": 0.92},
+  "parrot":     {"label": "Parrot (Mitthu)",    "look": "a green parrot with a red beak and bright feathers",                         "pitch": 6,  "speed": 1.15},
+  "deer":       {"label": "Deer (Hiran)",       "look": "a spotted deer (chital) with white spots and gentle eyes",                   "pitch": 3,  "speed": 1.05},
+  "bear":       {"label": "Bear (Bhalu)",       "look": "a black Indian sloth bear with shaggy fur and a pale snout",                 "pitch": -3, "speed": 0.95}
+}

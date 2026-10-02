@@ -1,0 +1,11 @@
+{
+  "dense_jungle": {"label": "Dense jungle",   "prompt": "dense tropical jungle, tall trees, thick green leaves, hanging vines, mist, shafts of sunlight"},
+  "river":        {"label": "Jungle river",   "prompt": "jungle river with calm water, mossy rocks, overhanging trees"},
+  "clearing":     {"label": "Jungle clearing","prompt": "open grassy clearing in a jungle, tall trees around, wildflowers"},
+  "banyan":       {"label": "Big banyan tree","prompt": "giant old banyan tree with thick roots and branches, jungle behind"},
+  "waterfall":    {"label": "Waterfall",      "prompt": "jungle waterfall splashing into a pool, wet rocks, green moss"},
+  "street":       {"label": "City street",    "prompt": "busy Indian city street, shops, parked scooters, power lines"},
+  "rooftop":      {"label": "City rooftop",   "prompt": "city rooftop with water tank and clotheslines, buildings behind"},
+  "park":         {"label": "City park",      "prompt": "city park with benches, trees, lamp posts, walking path"},
+  "market":       {"label": "Street market",  "prompt": "crowded street market with fruit stalls and colourful awnings"}
+}
