@@ -8,7 +8,7 @@ from animal_studio import compose, config, pipeline
 from animal_studio.config import load_json
 from animal_studio.generator import PlaceholderBackend, frames_for
 from animal_studio.project import Line, Project, Scene
-from animal_studio.prompts import build_prompt
+from animal_studio.prompts import MAX_WORDS, build_prompt, build_prompt_info
 
 
 def make_tone(path, seconds=1.0, freq=440):
@@ -39,8 +39,24 @@ class CoreTests(unittest.TestCase):
         s = Scene(prompt="Lion walking in jungle", animals=["lion", "monkey"],
                   background="river", lighting="night")
         p = build_prompt(s)
-        for needle in ["Lion walking in jungle", "lion", "macaque", "river", "moonlight"]:
+        for needle in ["Lion walking in jungle", "lion", "rhesus", "river", "moonlight"]:
             self.assertIn(needle, p)
+
+    def test_prompt_stays_within_budget(self):
+        s = Scene(prompt="Lion walking slowly in the jungle, all the other animals nearby watching "
+                         "him quietly from the bushes and trees while birds fly overhead",
+                  animals=["lion", "monkey", "dog", "chimpanzee", "elephant"],
+                  background="dense_jungle", lighting="golden")
+        p, dropped = build_prompt_info(s)
+        self.assertLessEqual(len(p.split()), MAX_WORDS)
+        self.assertTrue(p.startswith("Lion walking slowly in the jungle"))
+        self.assertIn("tropical jungle", p)       # setting kept
+        self.assertIn("golden hour", p)           # lighting kept
+        self.assertTrue(dropped)                  # something was trimmed
+        # a short scene is not trimmed at all
+        p2, d2 = build_prompt_info(Scene(prompt="Lion walks", animals=["lion"]))
+        self.assertEqual(d2, [])
+        self.assertIn("photorealistic, natural fur texture", p2)
 
     def test_frames_for(self):
         for sec in (1, 2.5, 4, 6):

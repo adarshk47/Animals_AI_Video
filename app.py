@@ -5,7 +5,7 @@ from animal_studio import pipeline
 from animal_studio.config import load_json
 from animal_studio.generator import get_backend
 from animal_studio.project import Line, Project, Scene, safe_name
-from animal_studio.prompts import build_prompt
+from animal_studio.prompts import build_prompt_info
 
 st.set_page_config(page_title="Animal Studio", page_icon="🦁", layout="wide")
 
@@ -129,7 +129,11 @@ for idx, sc in enumerate(project.scenes):
             sc.seed = st.number_input("Seed (change for a different take)", 0, 999999, sc.seed,
                                       key=f"s{sc.id}")
             with st.popover("See the full prompt sent to the model"):
-                st.write(build_prompt(sc))
+                full, dropped = build_prompt_info(sc)
+                st.write(full)
+                st.caption(f"{len(full.split())} words (the model reads about 65).")
+                if dropped:
+                    st.caption("Shortened to fit: " + ", ".join(dropped))
         with c2:
             if sc.clip and project.path(sc.clip).exists():
                 st.video(str(project.path(sc.clip)))
