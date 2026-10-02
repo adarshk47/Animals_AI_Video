@@ -7,7 +7,7 @@ Two parts in this repo:
 
 ## Animal Studio: run on your Windows PC
 
-**Needs:** Windows, Python 3.10+, an NVIDIA GPU (works with under 12GB VRAM), about 15GB free disk for the model.
+**Needs:** Windows, **Python 3.12 (64-bit)**, an NVIDIA GPU (works with under 12GB VRAM), about 15GB free disk for the model.
 
 1. Double-click `setup.bat` once (creates a virtual environment, installs PyTorch with CUDA and the other packages).
 2. Double-click `run.bat`. Your browser opens the app.
