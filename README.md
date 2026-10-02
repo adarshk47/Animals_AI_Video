@@ -32,6 +32,9 @@ Two parts in this repo:
 - To add an animal, background or jungle idea, edit the JSON files in `animal_studio/data/`.
 - If a scene's voice is longer than its clip, the last frame is held until the voice ends.
 
+### I only see colour bars, no animals
+That is the Placeholder test clip. In the sidebar, set **Video generator** to **LTX-Video (real animals, local GPU)** and press Generate clip again. The first time it downloads the model, which takes a while.
+
 ### Not yet tested on a real GPU
 The app, voice effects, scene joining and the placeholder backend are tested (`python -m unittest discover -s tests`). The LTX-Video backend was written against the `diffusers` API but I could not run it on a GPU here, so the first run on your PC may need a small fix. If it errors, send me the message.
 

@@ -54,9 +54,22 @@ if choice == "➕ New project":
 project = Project.load(choice)
 
 st.sidebar.divider()
+def has_gpu() -> bool:
+    try:
+        import torch
+        return torch.cuda.is_available()
+    except Exception:
+        return False
+
+
+BACKENDS = ["placeholder", "ltx"]
 backend_name = st.sidebar.radio(
-    "Video generator", ["placeholder", "ltx"],
-    format_func=lambda x: "Placeholder (instant test clip)" if x == "placeholder" else "LTX-Video (local GPU)")
+    "Video generator", BACKENDS, index=1 if has_gpu() else 0,
+    format_func=lambda x: "Placeholder (colour-bar TEST clip)" if x == "placeholder"
+    else "LTX-Video (real animals, local GPU)")
+if backend_name == "placeholder":
+    st.sidebar.warning("Test mode: clips will be colour bars, not animals. "
+                       "Choose LTX-Video for real clips.")
 seg = st.sidebar.slider("Max seconds per generated part", 2.0, 6.0, 4.0, 0.5,
                         help="Lower uses less VRAM. Longer scenes are chained from several parts.")
 steps = st.sidebar.slider("Quality steps", 10, 50, 30,
@@ -122,6 +135,9 @@ for idx, sc in enumerate(project.scenes):
                 st.video(str(project.path(sc.clip)))
             else:
                 st.info("No clip yet.")
+            if backend_name == "placeholder":
+                st.warning("Test mode: this makes colour bars, not animals. "
+                           "Switch the Video generator in the sidebar to LTX-Video.")
             if st.button("🎬 Generate clip", key=f"g{sc.id}", type="primary"):
                 bar = st.progress(0.0, text="Starting...")
                 try:
