@@ -23,6 +23,22 @@ def frames_for(seconds: float, fps: int = FPS) -> int:
     return 8 * k + 1
 
 
+def cuda_help(torch) -> str:
+    """Explain why CUDA is unavailable, with the exact fix."""
+    ver, cuda = torch.__version__, torch.version.cuda
+    head = f"No CUDA GPU usable by PyTorch. (torch {ver}, built for CUDA: {cuda})\n\n"
+    if cuda is None:
+        return head + (
+            "Cause: the CPU-only PyTorch is installed. Fix, in the project folder:\n"
+            "  .venv\\Scripts\\activate\n"
+            "  pip uninstall -y torch torchvision torchaudio\n"
+            "  pip install torch --index-url https://download.pytorch.org/whl/cu124\n"
+            "Then close this app completely and start run.bat again.")
+    return head + (
+        "PyTorch has CUDA support, but cannot see the GPU. Update the NVIDIA driver, "
+        "restart the PC, and check that `nvidia-smi` works. Then restart run.bat.")
+
+
 class PlaceholderBackend:
     name = "placeholder"
 
@@ -52,8 +68,7 @@ class LTXBackend:
         import torch
         from diffusers import LTXImageToVideoPipeline, LTXPipeline
         if not torch.cuda.is_available():
-            raise RuntimeError("No CUDA GPU found. Use the placeholder backend, or install "
-                               "the CUDA build of PyTorch (see README).")
+            raise RuntimeError(cuda_help(torch))
         self._t2v = LTXPipeline.from_pretrained(self.model_id, torch_dtype=torch.bfloat16)
         self._i2v = LTXImageToVideoPipeline.from_pipe(self._t2v)
         # Keep VRAM low: only the active sub-model lives on the GPU.
